@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Голубь Messenger</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #f0f2f5;
+    height: 100vh;
+    display: flex;
+    overflow: hidden;
+  }
+  .sidebar {
+    width: 340px;
+    background: #fff;
+    border-right: 1px solid #e4e6eb;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .sidebar-header {
+    padding: 16px;
+    border-bottom: 1px solid #e4e6eb;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .sidebar-header h1 {
+    font-size: 24px;
+    color: #0084ff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .sidebar-header h1 span { font-size: 22px; }
+  .header-actions { display: flex; gap: 6px; }
+  .icon-btn {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    border: none;
+    background: #f0f2f5;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .15s;
+  }
+  .icon-btn:hover { background: #e4e6eb; }
+  .user-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: #f7f8fa;
+    border-bottom: 1px solid #e4e6eb;
+    font-size: 14px;
+  }
+  .avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0084ff, #00c6ff);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    flex-shrink: 0;
+  }
+  .avatar.saved {
+    background: linear-gradient(135deg, #f7b733, #fc4a1a);
+  }
+  .logout-btn {
+    margin-left: auto;
+    padding: 5px 10px;
+    border: 1px solid #ccd0d5;
+    background: #fff;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    color: #65676b;
+  }
+  .logout-btn:hover { background: #f0f2f5; }
+  .tabs { display: flex; border-bottom: 1px solid #e4e6eb; }
+  .tabs button {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 14px;
+    color: #65676b;
+    border-bottom: 3px solid transparent;
+  }
+  .tabs button.active {
+    color: #0084ff;
+    border-bottom-color: #0084ff;
+    font-weight: 600;
+  }
+  .chat-list { flex: 1; overflow-y: auto; }
+  .chat-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: background .15s;
+    border-bottom: 1px solid #f0f2f5;
+    user-select: none;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(0,132,255,.2);
+  }
+  .chat-item:hover { background: #f5f6f7; }
+  .chat-item.active { background: #e7f3ff; }
+  .chat-item .info { flex: 1; min-width: 0; }
+  .chat-item .info .name { font-weight: 600; font-size: 15px; }
+  .chat-item .info .preview {
+    font-size: 13px;
+    color: #65676b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .chat-item.saved-item .info .name { color: #b45309; }
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    min-width: 0;
+  }
+  .chat-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid #e4e6eb;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #fff;
+  }
+  .chat-header .title { font-weight: 600; font-size: 16px; }
+  .chat-header .subtitle { font-size: 12px; color: #65676b; }
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .msg-row { display: flex; margin-bottom: 2px; }
+  .msg-row.me { justify-content: flex-end; }
+  .bubble {
+    max-width: 65%;
+    padding: 9px 14px;
+    border-radius: 18px;
+    font-size: 15px;
+    line-height: 1.35;
+    word-wrap: break-word;
+  }
+  .msg-row.me .bubble {
+    background: #0084ff;
+    color: #fff;
+    border-bottom-right-radius: 4px;
+  }
+  .msg-row.them .bubble {
+    background: #e4e6eb;
+    color: #050505;
+    border-bottom-left-radius: 4px;
+  }
+  .bubble .sender {
+    font-size: 11px;
+    opacity: .7;
+    margin-bottom: 2px;
+    font-weight: 600;
+  }
+  .bubble .time {
+    font-size: 10px;
+    opacity: .6;
+    margin-top: 3px;
+    text-align: right;
+  }
+  .composer {
+    padding: 12px 20px 16px;
+    border-top: 1px solid #e4e6eb;
+    background: #fff;
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+  }
+  .composer textarea {
+    flex: 1;
+    resize: none;
+    border: none;
+    background: #f0f2f5;
+    border-radius: 20px;
+    padding: 10px 16px;
+    font-size: 15px;
+    font-family: inherit;
+    max-height: 100px;
+    outline: none;
+  }
+  .composer button {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: #0084ff;
+    color: #fff;
+    font-size: 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background .15s;
+  }
+  .composer button:hover { background: #0073e6; }
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 16px;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px;
+    width: 100%;
+    max-width: 460px;
+    box-shadow: 0 10px 40px rgba(0,0,0,.3);
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .modal h2 { font-size: 18px; margin-bottom: 8px; color: #050505; }
+  .modal p { font-size: 14px; color: #65676b; margin-bottom: 14px; line-height: 1.4; }
+  .modal input, .modal textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ccd0d5;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 10px;
+    font-family: inherit;
+  }
+  .modal textarea { resize: vertical; min-height: 80px; }
+  .modal .btn-row { display: flex; gap: 8px; }
+  .modal .btn-row button {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .modal .btn-primary { background: #0084ff; color: #fff; }
+  .modal .btn-primary:hover { background: #0073e6; }
+  .modal .btn-secondary { background: #e4e6eb; color: #050505; }
+  .modal .btn-secondary:hover { background: #d8dadf; }
+  .modal .status { font-size: 13px; margin-top: 8px; }
+  .modal .status.error { color: #c53030; }
+  .modal .status.success { color: #2f855a; }
+  .auth-tabs { display: flex; margin-bottom: 16px; border-bottom: 2px solid #e4e6eb; }
+  .auth-tabs button {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 15px;
+    color: #65676b;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+  }
+  .auth-tabs button.active {
+    color: #0084ff;
+    border-bottom-color: #0084ff;
+    font-weight: 600;
+  }
+  .key-panel {
+    padding: 10px 16px;
+    background: #fffbe6;
+    border-bottom: 1px solid #ffe58f;
+    font-size: 12px;
+    color: #8c6d1f;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .key-panel button {
+    padding: 4px 10px;
+    border: 1px solid #d4b106;
+    background: #fff;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    color: #8c6d1f;
+    font-weight: 600;
+    margin-left: auto;
+  }
+  .new-chat-btn {
+    margin: 10px 16px;
+    padding: 10px;
+    border: none;
+    background: #e7f3ff;
+    color: #0084ff;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .new-chat-btn:hover { background: #d6ebff; }
+  .invite-box {
+    background: #f0f2f5;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #050505;
+    margin-bottom: 10px;
+    line-height: 1.5;
+    word-break: break-word;
+    white-space: pre-wrap;
+  }
+  #debugPanel {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    max-height: 40vh; overflow: auto;
+    background: #000; color: #0f0;
+    font: 11px monospace; padding: 6px;
+    z-index: 9999; display: none;
+    white-space: pre-wrap;
+  }
+  @media (max-width: 700px) {
+    .sidebar { width: 100%; }
+    .main { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-header">
+    <h1><span>🕊️</span> Голубь</h1>
+    <div class="header-actions">
+      <button class="icon-btn" onclick="openInviteModal()" title="Пригласить друзей">👥</button>
+      <button class="icon-btn" onclick="openKeyModal()" title="Ключ шифрования">🔐</button>
+    </div>
+  </div>
+
+  <div class="user-bar" id="userBar" style="display:none;">
+    <div class="avatar" id="userAvatar">?</div>
+    <div style="flex:1; min-width:0;">
+      <div style="font-weight:600; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="userName">—</div>
+      <div style="font-size:11px; color:#65676b;" id="userIdLabel">—</div>
+    </div>
+    <button class="logout-btn" onclick="doLogout()">Выйти</button>
+  </div>
+
+  <div class="tabs">
+    <button class="active" onclick="switchTab('chats')">Чаты</button>
+    <button onclick="switchTab('groups')">Группы</button>
+    <button onclick="switchTab('channels')">Каналы</button>
+  </div>
+
+  <button class="new-chat-btn" id="newChatBtn" onclick="openNewChatDialog()">+ Новый контакт</button>
+
+  <div class="chat-list" id="chatList"></div>
+</div>
+
+<div class="main">
+  <div class="key-panel" id="keyPanel">
+    <span id="keyPanelText">Ключ шифрования не установлен.</span>
+    <button onclick="openKeyModal()">Настроить</button>
+  </div>
+
+  <div class="chat-header" id="chatHeader" style="display:none;">
+    <div class="avatar" id="chatAvatar">?</div>
+    <div>
+      <div class="title" id="chatTitle">—</div>
+      <div class="subtitle" id="chatSubtitle">—</div>
+    </div>
+  </div>
+
+  <div class="messages" id="messages">
+    <div style="text-align:center; color:#65676b; margin-top:40px; font-size:14px;">
+      Выберите чат слева, чтобы начать переписку
+    </div>
+  </div>
+
+  <div class="composer" id="composer" style="display:none;">
+    <textarea id="msgInput" rows="1" placeholder="Напишите сообщение..." onkeydown="handleKey(event)"></textarea>
+    <button id="sendBtn" onclick="sendMessage()" title="Отправить">➤</button>
+  </div>
+</div>
+
+<div class="modal-overlay show" id="authModal">
+  <div class="modal">
+    <h2>🕊️ Голубь</h2>
+    <div class="auth-tabs">
+      <button class="active" id="tabLoginBtn" onclick="switchAuthTab('login')">Войти</button>
+      <button id="tabRegisterBtn" onclick="switchAuthTab('register')">Регистрация</button>
+    </div>
+    <div id="loginForm">
+      <p>Введите ваш ID, чтобы продолжить.</p>
+      <input type="text" id="loginId" placeholder="Ваш ID (латиница)" autocomplete="username">
+      <button class="btn-primary" style="width:100%; padding:10px; border:none; border-radius:8px; cursor:pointer; font-weight:600;" onclick="doLogin()">Войти</button>
+      <div class="status" id="loginStatus"></div>
+    </div>
+    <div id="registerForm" style="display:none;">
+      <p>Создайте новый профиль в Голубе.</p>
+      <input type="text" id="regId" placeholder="ID (латиница, цифры, _, -)" autocomplete="username">
+      <input type="text" id="regName" placeholder="Отображаемое имя" autocomplete="nickname">
+      <button class="btn-primary" style="width:100%; padding:10px; border:none; border-radius:8px; cursor:pointer; font-weight:600;" onclick="doRegister()">Создать профиль</button>
+      <div class="status" id="regStatus"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="keyModal">
+  <div class="modal">
+    <h2>🔐 Ключ шифрования</h2>
+    <p>Ключ хранится в памяти этого устройства.</p>
+    <input type="text" id="keyInput" placeholder="Вставьте ключ или нажмите Сгенерировать">
+    <div class="btn-row">
+      <button class="btn-primary" onclick="generateKey()">Сгенерировать</button>
+      <button class="btn-secondary" onclick="applyKey()">Применить</button>
+    </div>
+    <button class="btn-secondary" style="width:100%; margin-top:8px; padding:10px; border:none; border-radius:8px; cursor:pointer;" onclick="closeKeyModal()">Закрыть</button>
+    <div class="status" id="keyStatus"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="newChatModal">
+  <div class="modal">
+    <h2 id="newChatTitle">✨ Новый контакт</h2>
+    <p id="newChatHint">Введите ID пользователя.</p>
+    <div id="contactFields">
+      <input type="text" id="newChatId" placeholder="ID пользователя (например, alice)">
+    </div>
+    <div id="groupFields" style="display:none;">
+      <input type="text" id="newGroupName" placeholder="Название группы или канала">
+      <textarea id="newGroupDesc" placeholder="Описание (необязательно)" rows="3"></textarea>
+      <div style="font-size:12px; color:#65676b; margin-bottom:8px;">
+        ID будет сгенерирован автоматически.
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-primary" id="newChatSubmitBtn" onclick="createNewChat()">Добавить</button>
+      <button class="btn-secondary" onclick="closeNewChatDialog()">Отмена</button>
+    </div>
+    <div class="status" id="newChatStatus"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="inviteModal">
+  <div class="modal">
+    <h2>👥 Пригласить друзей</h2>
+    <p>Поделитесь ссылкой на мессенджер или своим профилем.</p>
+    <div class="invite-box" id="inviteText">—</div>
+    <div class="btn-row">
+      <button class="btn-primary" onclick="copyInvite()">Скопировать</button>
+      <button class="btn-secondary" onclick="shareInvite()">Поделиться</button>
+    </div>
+    <button class="btn-secondary" style="width:100%; margin-top:8px; padding:10px; border:none; border-radius:8px; cursor:pointer;" onclick="closeInviteModal()">Закрыть</button>
+    <div class="status" id="inviteStatus"></div>
+  </div>
+</div>
+
+<div id="debugPanel"></div>
+
+<script>
+/* ============================================================
+   DEBUG
+   ============================================================ */
+(function setupDebug() {
+  const panel = document.getElementById('debugPanel');
+  const forceOn = location.search.includes('debug=1');
+  const show = () => { panel.style.display = 'block'; };
+  window.onerror = function(msg, src, line, col) {
+    show(); panel.textContent += '❌ ' + msg + ' (' + line + ':' + col + ')\n';
+  };
+  window.addEventListener('unhandledrejection', e => {
+    show(); panel.textContent += '❌ Promise: ' + (e.reason && e.reason.message ? e.reason.message : e.reason) + '\n';
+  });
+  const origLog = console.log, origErr = console.error;
+  console.log = function(...args) {
+    origLog.apply(console, args);
+    if (forceOn) { show(); panel.textContent += '• ' + args.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(' ') + '\n'; }
+  };
+  console.error = function(...args) {
+    origErr.apply(console, args);
+    show(); panel.textContent += '❌ ' + args.map(a => a && a.message ? a.message : (typeof a === 'object' ? JSON.stringify(a) : a)).join(' ') + '\n';
+  };
+  if (forceOn) show();
+})();
+
+/* ============================================================
+   GOLUBSCRIPT
+   ============================================================ */
+const GOLUB_ALPHABET = "абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/=";
+const GOLUB_MAP = {};
+const GOLUB_REVERSE = {};
+(function buildGolubAlphabet() {
+  const order = [];
+  for (let i = 0; i < GOLUB_ALPHABET.length; i++) order.push(i);
+  let seed = 42424242;
+  function rnd() { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }
+  for (let i = order.length - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  const shuffled = order.map(i => GOLUB_ALPHABET[i]).join('');
+  for (let i = 0; i < GOLUB_ALPHABET.length; i++) {
+    GOLUB_MAP[GOLUB_ALPHABET[i]] = shuffled[i];
+    GOLUB_REVERSE[shuffled[i]] = GOLUB_ALPHABET[i];
+  }
+})();
+function toGolub(s) { let o=''; for (const c of s) o += GOLUB_MAP[c] || c; return o; }
+function fromGolub(s) { let o=''; for (const c of s) o += GOLUB_REVERSE[c] || c; return o; }
+
+/* ============================================================
+   КРИПТОГРАФИЯ
+   ============================================================ */
+const FIREBASE_URL = 'https://resurs-3a5b6-default-rtdb.firebaseio.com';
+const LS_USER = 'golub_user_v2';
+const LS_KEY = 'golub_key_v2';
+
+let cryptoKey = null;
+let keyBase64 = '';
+
+async function generateKey() {
+  try {
+    const key = await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]);
+    cryptoKey = key;
+    const exported = await crypto.subtle.exportKey("raw", key);
+    keyBase64 = btoa(String.fromCharCode(...new Uint8Array(exported)));
+    document.getElementById('keyInput').value = keyBase64;
+    saveKeyToDevice();
+    document.getElementById('keyStatus').className = 'status success';
+    document.getElementById('keyStatus').textContent = 'Ключ сгенерирован и сохранён.';
+    updateKeyPanel();
+  } catch (e) {
+    document.getElementById('keyStatus').className = 'status error';
+    document.getElementById('keyStatus').textContent = 'Ошибка: ' + e.message;
+  }
+}
+async function importKeyFromBase64(b64) {
+  const raw = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  return await crypto.subtle.importKey("raw", raw, { name: "AES-GCM" }, true, ["encrypt", "decrypt"]);
+}
+async function applyKey() {
+  const val = document.getElementById('keyInput').value.trim();
+  if (!val) return;
+  try {
+    cryptoKey = await importKeyFromBase64(val);
+    keyBase64 = val;
+    saveKeyToDevice();
+    document.getElementById('keyStatus').className = 'status success';
+    document.getElementById('keyStatus').textContent = 'Ключ применён.';
+    updateKeyPanel();
+  } catch (e) {
+    document.getElementById('keyStatus').className = 'status error';
+    document.getElementById('keyStatus').textContent = 'Неверный ключ.';
+  }
+}
+function saveKeyToDevice() {
+  if (keyBase64) localStorage.setItem(LS_KEY, keyBase64); else localStorage.removeItem(LS_KEY);
+}
+function updateKeyPanel() {
+  const p = document.getElementById('keyPanelText');
+  if (cryptoKey) {
+    p.textContent = '🔐 Шифрование активно (AES-GCM + GolubScript).';
+    document.getElementById('keyPanel').style.background = '#e6ffed';
+    document.getElementById('keyPanel').style.borderBottomColor = '#b7ebc6';
+  } else {
+    p.textContent = 'Ключ шифрования не установлен.';
+    document.getElementById('keyPanel').style.background = '#fffbe6';
+    document.getElementById('keyPanel').style.borderBottomColor = '#ffe58f';
+  }
+}
+async function encryptMessage(plainText) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encoded = new TextEncoder().encode(plainText);
+  const cipher = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, cryptoKey, encoded);
+  return {
+    iv: toGolub(btoa(String.fromCharCode(...iv))),
+    data: toGolub(btoa(String.fromCharCode(...new Uint8Array(cipher))))
+  };
+}
+async function decryptMessage(ivGolub, dataGolub) {
+  const iv = Uint8Array.from(atob(fromGolub(ivGolub)), c => c.charCodeAt(0));
+  const data = Uint8Array.from(atob(fromGolub(dataGolub)), c => c.charCodeAt(0));
+  const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, cryptoKey, data);
+  return new TextDecoder().decode(plain);
+}
+
+/* ============================================================
+   СОСТОЯНИЕ
+   ============================================================ */
+let currentUser = null;
+let currentChat = null;
+let chats = [];
+let messagesListener = null;
+let chatsListener = null;
+let currentTab = 'chats';
+
+/* ============================================================
+   ИЗБРАННОЕ (личный чат с самим собой)
+   ============================================================ */
+function getSavedChatId(userId) {
+  return `saved_${userId}`;
+}
+
+async function ensureSavedChat() {
+  if (!currentUser) return;
+  const chatId = getSavedChatId(currentUser.id);
+  try {
+    // Проверяем, есть ли запись в userChats
+    const res = await fetch(`${FIREBASE_URL}/userChats/${currentUser.id}/${chatId}.json`);
+    const existing = await res.json();
+    if (!existing) {
+      const meta = {
+        type: 'saved',
+        name: 'Избранное',
+        createdAt: Date.now()
+      };
+      await fetch(`${FIREBASE_URL}/userChats/${currentUser.id}/${chatId}.json`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(meta)
+      });
+    }
+  } catch (e) {
+    console.error('ensureSavedChat:', e);
+  }
+}
+
+/* ============================================================
+   АВТОРИЗАЦИЯ
+   ============================================================ */
+function switchAuthTab(tab) {
+  const isLogin = tab === 'login';
+  document.getElementById('tabLoginBtn').classList.toggle('active', isLogin);
+  document.getElementById('tabRegisterBtn').classList.toggle('active', !isLogin);
+  document.getElementById('loginForm').style.display = isLogin ? 'block' : 'none';
+  document.getElementById('registerForm').style.display = isLogin ? 'none' : 'block';
+  document.getElementById('loginStatus').textContent = '';
+  document.getElementById('regStatus').textContent = '';
+}
+
+async function doLogin() {
+  const id = document.getElementById('loginId').value.trim().toLowerCase();
+  const status = document.getElementById('loginStatus');
+  if (!id) { status.className='status error'; status.textContent='Введите ID.'; return; }
+  if (!/^[a-z0-9_\-]+$/.test(id)) { status.className='status error'; status.textContent='ID: латиница, цифры, _, -.'; return; }
+  status.className='status'; status.textContent='Проверяем...';
+  try {
+    const res = await fetch(`${FIREBASE_URL}/users/${id}.json`);
+    const data = await res.json();
+    if (!data) { status.className='status error'; status.textContent='Аккаунт не существует.'; return; }
+    let name = data.name || id;
+    if (data.encName && cryptoKey) {
+      try {
+        const sep = data.encName.indexOf('|');
+        name = await decryptMessage(data.encName.slice(0, sep), data.encName.slice(sep + 1));
+      } catch (e) { name = data.name || id; }
+    }
+    await completeLogin(id, name);
+  } catch (e) { status.className='status error'; status.textContent='Ошибка сети: ' + e.message; }
+}
+
+async function doRegister() {
+  const id = document.getElementById('regId').value.trim().toLowerCase();
+  const name = document.getElementById('regName').value.trim();
+  const status = document.getElementById('regStatus');
+  if (!id || !name) { status.className='status error'; status.textContent='Заполните оба поля.'; return; }
+  if (!/^[a-z0-9_\-]+$/.test(id)) { status.className='status error'; status.textContent='ID: латиница, цифры, _, -.'; return; }
+  status.className='status'; status.textContent='Проверяем...';
+  try {
+    const res = await fetch(`${FIREBASE_URL}/users/${id}.json`);
+    if (await res.json()) { status.className='status error'; status.textContent='Этот ID уже занят.'; return; }
+    let payload = { name, createdAt: Date.now() };
+    if (cryptoKey) {
+      const enc = await encryptMessage(name);
+      payload = { encName: enc.iv + '|' + enc.data, createdAt: Date.now() };
+    }
+    await fetch(`${FIREBASE_URL}/users/${id}.json`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+    });
+    await completeLogin(id, name);
+  } catch (e) { status.className='status error'; status.textContent='Ошибка: ' + e.message; }
+}
+
+async function completeLogin(id, name) {
+  currentUser = { id, name };
+  localStorage.setItem(LS_USER, JSON.stringify(currentUser));
+  document.getElementById('authModal').classList.remove('show');
+  document.getElementById('userBar').style.display = 'flex';
+  document.getElementById('userAvatar').textContent = name[0].toUpperCase();
+  document.getElementById('userName').textContent = name;
+  document.getElementById('userIdLabel').textContent = '@' + id;
+
+  // Создаём «Избранное» при первом входе
+  await ensureSavedChat();
+  startChatsListener();
+}
+
+function doLogout() {
+  if (!confirm('Выйти из аккаунта? Ключ останется на устройстве.')) return;
+  currentUser = null;
+  currentChat = null;
+  chats = [];
+  localStorage.removeItem(LS_USER);
+  if (chatsListener) clearInterval(chatsListener);
+  if (messagesListener) clearInterval(messagesListener);
+  document.getElementById('userBar').style.display = 'none';
+  document.getElementById('chatHeader').style.display = 'none';
+  document.getElementById('composer').style.display = 'none';
+  document.getElementById('messages').innerHTML = '';
+  document.getElementById('chatList').innerHTML = '';
+  document.getElementById('authModal').classList.add('show');
+  document.getElementById('loginId').value = '';
+}
+
+/* ============================================================
+   СПИСОК ЧАТОВ
+   ============================================================ */
+function startChatsListener() {
+  loadUserChats();
+  if (chatsListener) clearInterval(chatsListener);
+  chatsListener = setInterval(loadUserChats, 5000);
+}
+
+async function loadUserChats() {
+  if (!currentUser) return;
+  try {
+    const res = await fetch(`${FIREBASE_URL}/userChats/${currentUser.id}.json`);
+    const data = await res.json();
+    const arr = [];
+    const savedId = getSavedChatId(currentUser.id);
+
+    if (data) {
+      for (const [chatId, meta] of Object.entries(data)) {
+        let displayName = meta.name || chatId;
+        if (meta.encName && cryptoKey) {
+          try {
+            const sep = meta.encName.indexOf('|');
+            displayName = await decryptMessage(meta.encName.slice(0, sep), meta.encName.slice(sep + 1));
+          } catch (e) { displayName = meta.name || chatId; }
+        }
+        arr.push({
+          id: chatId,
+          type: meta.type || 'contact',
+          name: displayName,
+          description: meta.description || ''
+        });
+      }
+    }
+
+    // Если «Избранное» каким-то образом отсутствует — добавляем локально
+    if (!arr.some(c => c.id === savedId)) {
+      arr.unshift({ id: savedId, type: 'saved', name: 'Избранное', description: '' });
+    }
+
+    chats = arr;
+    renderChatList();
+  } catch (e) { console.error('loadUserChats', e); }
+}
+
+function renderChatList() {
+  const list = document.getElementById('chatList');
+  list.innerHTML = '';
+  if (chats.length === 0) {
+    list.innerHTML = '<div style="padding:20px; text-align:center; color:#65676b; font-size:14px;">Нет чатов.</div>';
+    return;
+  }
+  const typeFilter = currentTab === 'chats' ? ['contact', 'saved'] : (currentTab === 'groups' ? ['group'] : ['channel']);
+  let filtered = chats.filter(c => typeFilter.includes(c.type));
+
+  // Сортируем: «Избранное» всегда первым
+  filtered.sort((a, b) => {
+    if (a.type === 'saved') return -1;
+    if (b.type === 'saved') return 1;
+    return 0;
+  });
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<div style="padding:20px; text-align:center; color:#65676b; font-size:14px;">Пусто</div>';
+    return;
+  }
+  for (const chat of filtered) {
+    const div = document.createElement('div');
+    const isSaved = chat.type === 'saved';
+    div.className = 'chat-item' + (currentChat && currentChat.id === chat.id ? ' active' : '') + (isSaved ? ' saved-item' : '');
+    const initial = isSaved ? '★' : (chat.name || chat.id || '?')[0].toUpperCase();
+    const avatarClass = isSaved ? 'avatar saved' : 'avatar';
+    div.innerHTML = `
+      <div class="${avatarClass}">${escapeHtml(initial)}</div>
+      <div class="info">
+        <div class="name">${escapeHtml(chat.name || chat.id)}</div>
+        <div class="preview">${isSaved ? 'Личные заметки' : escapeHtml(chat.type === 'channel' ? 'Канал' : chat.type === 'group' ? 'Группа' : 'Контакт')}</div>
+      </div>
+    `;
+    div.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      console.log('Клик по чату:', chat.id, chat.name);
+      openChat(chat);
+    });
+    list.appendChild(div);
+  }
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tabs button').forEach((b, i) => {
+    b.classList.toggle('active', ['chats','groups','channels'][i] === tab);
+  });
+  const btn = document.getElementById('newChatBtn');
+  if (tab === 'chats') btn.textContent = '+ Новый контакт';
+  else if (tab === 'groups') btn.textContent = '+ Создать группу';
+  else btn.textContent = '+ Создать канал';
+  renderChatList();
+}
+
+/* ============================================================
+   НОВЫЙ ЧАТ / ГРУППА / КАНАЛ
+   ============================================================ */
+function openNewChatDialog() {
+  document.getElementById('newChatStatus').textContent = '';
+  document.getElementById('newChatId').value = '';
+  document.getElementById('newGroupName').value = '';
+  document.getElementById('newGroupDesc').value = '';
+
+  const title = document.getElementById('newChatTitle');
+  const hint = document.getElementById('newChatHint');
+  const contactFields = document.getElementById('contactFields');
+  const groupFields = document.getElementById('groupFields');
+
+  if (currentTab === 'chats') {
+    title.textContent = '✨ Новый контакт';
+    hint.textContent = 'Введите ID пользователя. Профиль должен существовать.';
+    contactFields.style.display = 'block';
+    groupFields.style.display = 'none';
+  } else if (currentTab === 'groups') {
+    title.textContent = '👥 Новая группа';
+    hint.textContent = 'Введите название и описание группы.';
+    contactFields.style.display = 'none';
+    groupFields.style.display = 'block';
+  } else {
+    title.textContent = '📢 Новый канал';
+    hint.textContent = 'Введите название и описание канала.';
+    contactFields.style.display = 'none';
+    groupFields.style.display = 'block';
+  }
+  document.getElementById('newChatModal').classList.add('show');
+}
+function closeNewChatDialog() {
+  document.getElementById('newChatModal').classList.remove('show');
+}
+
+async function createNewChat() {
+  const status = document.getElementById('newChatStatus');
+  const type = currentTab === 'chats' ? 'contact' : (currentTab === 'groups' ? 'group' : 'channel');
+  if (type === 'contact') await createContact(status);
+  else await createGroupOrChannel(type, status);
+}
+
+async function createContact(status) {
+  const targetId = document.getElementById('newChatId').value.trim().toLowerCase();
+  if (!targetId) { status.className='status error'; status.textContent='Введите ID.'; return; }
+  if (targetId === currentUser.id) { status.className='status error'; status.textContent='Это ваш ID.'; return; }
+  status.className='status'; status.textContent='Проверяем...';
+  try {
+    const res = await fetch(`${FIREBASE_URL}/users/${targetId}.json`);
+    const userData = await res.json();
+    if (!userData) { status.className='status error'; status.textContent='Аккаунт не существует.'; return; }
+
+    let displayName = userData.name || targetId;
+    if (userData.encName && cryptoKey) {
+      try {
+        const sep = userData.encName.indexOf('|');
+        displayName = await decryptMessage(userData.encName.slice(0, sep), userData.encName.slice(sep + 1));
+      } catch (e) {}
+    }
+
+    const chatKey = currentUser.id < targetId
+      ? `${currentUser.id}_${targetId}`
+      : `${targetId}_${currentUser.id}`;
+
+    let meta = { type: 'contact', name: displayName, createdAt: Date.now() };
+    if (cryptoKey) {
+      const enc = await encryptMessage(displayName);
+      meta = { type: 'contact', encName: enc.iv + '|' + enc.data, createdAt: Date.now() };
+    }
+
+    await fetch(`${FIREBASE_URL}/userChats/${currentUser.id}/${chatKey}.json`, {
+      method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(meta)
+    });
+    await fetch(`${FIREBASE_URL}/userChats/${targetId}/${chatKey}.json`, {
+      method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(meta)
+    });
+
+    closeNewChatDialog();
+    await loadUserChats();
+    setTimeout(() => {
+      const chat = chats.find(c => c.id === chatKey);
+      if (chat) openChat(chat);
+    }, 150);
+  } catch (e) { status.className='status error'; status.textContent='Ошибка: ' + e.message; }
+}
+
+async function createGroupOrChannel(type, status) {
+  const name = document.getElementById('newGroupName').value.trim();
+  const description = document.getElementById('newGroupDesc').value.trim();
+  if (!name) { status.className='status error'; status.textContent='Введите название.'; return; }
+  status.className='status'; status.textContent='Создаём...';
+  try {
+    const chatKey = `${type}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+    let meta = { type, name, description, owner: currentUser.id, createdAt: Date.now() };
+    if (cryptoKey) {
+      const encName = await encryptMessage(name);
+      const encDesc = await encryptMessage(description || '');
+      meta = {
+        type,
+        encName: encName.iv + '|' + encName.data,
+        encDesc: encDesc.iv + '|' + encDesc.data,
+        owner: currentUser.id,
+        createdAt: Date.now()
+      };
+    }
+
+    await fetch(`${FIREBASE_URL}/groups/${chatKey}.json`, {
+      method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(meta)
+    });
+    await fetch(`${FIREBASE_URL}/userChats/${currentUser.id}/${chatKey}.json`, {
+      method: 'PUT', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ ...meta, name, description })
+    });
+
+    closeNewChatDialog();
+    await loadUserChats();
+    setTimeout(() => {
+      const chat = chats.find(c => c.id === chatKey);
+      if (chat) openChat(chat);
+    }, 150);
+  } catch (e) { status.className='status error'; status.textContent='Ошибка: ' + e.message; }
+}
+
+/* ============================================================
+   ОТКРЫТИЕ ЧАТА
+   ============================================================ */
+async function openChat(chat) {
+  if (!chat) { console.warn('openChat: пустой chat'); return; }
+  currentChat = chat;
+
+  const header = document.getElementById('chatHeader');
+  const composer = document.getElementById('composer');
+  const avatar = document.getElementById('chatAvatar');
+  const title = document.getElementById('chatTitle');
+  const subtitle = document.getElementById('chatSubtitle');
+
+  if (header) header.style.display = 'flex';
+  if (composer) composer.style.display = 'flex';
+
+  const isSaved = chat.type === 'saved';
+  if (avatar) {
+    avatar.textContent = isSaved ? '★' : (chat.name || chat.id || '?')[0].toUpperCase();
+    avatar.className = isSaved ? 'avatar saved' : 'avatar';
+  }
+  if (title) title.textContent = chat.name || chat.id || 'Чат';
+  if (subtitle) {
+    if (isSaved) {
+      subtitle.textContent = 'Личные заметки · только вы видите этот чат';
+    } else {
+      let s = chat.type === 'channel' ? 'Канал' : chat.type === 'group' ? 'Группа' : 'Личный чат';
+      if (chat.description) s += ' · ' + chat.description;
+      subtitle.textContent = s;
+    }
+  }
+
+  renderChatList();
+  await loadMessages();
+
+  if (messagesListener) clearInterval(messagesListener);
+  const myChatId = chat.id;
+  messagesListener = setInterval(() => {
+    if (currentChat && currentChat.id === myChatId) loadMessages();
+  }, 3000);
+}
+
+async function loadMessages() {
+  if (!currentChat || !currentUser) return;
+  const chatId = currentChat.id;
+  try {
+    const res = await fetch(`${FIREBASE_URL}/messages/${chatId}.json`);
+    const data = await res.json();
+    if (!currentChat || currentChat.id !== chatId) return;
+
+    const container = document.getElementById('messages');
+    container.innerHTML = '';
+    if (!data) {
+      const hint = currentChat.type === 'saved'
+        ? 'Здесь можно сохранять заметки и сообщения для себя.'
+        : 'Сообщений пока нет. Напишите первым!';
+      container.innerHTML = `<div style="text-align:center; color:#65676b; margin-top:20px; font-size:14px;">${hint}</div>`;
+      return;
+    }
+    const entries = Object.entries(data).sort((a, b) => (a[1].timestamp || 0) - (b[1].timestamp || 0));
+    for (const [id, msg] of entries) {
+      const isMe = msg.sender === currentUser.id;
+      const row = document.createElement('div');
+      row.className = 'msg-row ' + (isMe ? 'me' : 'them');
+      let text;
+      try {
+        text = cryptoKey ? await decryptMessage(msg.iv, msg.data) : '🔒 [нужен ключ]';
+      } catch (e) { text = '🔒 [не удалось расшифровать]'; }
+      const time = new Date(msg.timestamp).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+      row.innerHTML = `
+        <div class="bubble">
+          ${!isMe && currentChat.type !== 'saved' ? `<div class="sender">${escapeHtml(msg.senderName || msg.sender)}</div>` : ''}
+          <div>${escapeHtml(text)}</div>
+          <div class="time">${time}</div>
+        </div>
+      `;
+      container.appendChild(row);
+    }
+    container.scrollTop = container.scrollHeight;
+  } catch (e) {
+    console.error('loadMessages:', e);
+  }
+}
+
+async function sendMessage() {
+  if (!currentChat || !currentUser) { alert('Откройте чат.'); return; }
+  if (!cryptoKey) { alert('Сначала настройте ключ шифрования.'); return; }
+  const input = document.getElementById('msgInput');
+  const text = input.value.trim();
+  if (!text) return;
+  const chatId = currentChat.id;
+  try {
+    const enc = await encryptMessage(text);
+    const payload = {
+      sender: currentUser.id,
+      senderName: currentUser.name,
+      iv: enc.iv,
+      data: enc.data,
+      timestamp: Date.now()
+    };
+    await fetch(`${FIREBASE_URL}/messages/${chatId}.json`, {
+      method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+    });
+    input.value = '';
+    if (currentChat && currentChat.id === chatId) await loadMessages();
+  } catch (e) { alert('Ошибка отправки: ' + e.message); }
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+/* ============================================================
+   ПРИГЛАШЕНИЕ
+   ============================================================ */
+function openInviteModal() {
+  if (!currentUser) return;
+  const url = window.location.origin + window.location.pathname;
+  const text =
+    `Присоединяйся в мессенджер «Голубь» 🕊️\n` +
+    `Ссылка: ${url}\n` +
+    `Мой профиль: @${currentUser.id} (${currentUser.name})\n` +
+    `Добавь меня по ID: ${currentUser.id}`;
+  document.getElementById('inviteText').textContent = text;
+  document.getElementById('inviteStatus').textContent = '';
+  document.getElementById('inviteModal').classList.add('show');
+}
+function closeInviteModal() { document.getElementById('inviteModal').classList.remove('show'); }
+async function copyInvite() {
+  const text = document.getElementById('inviteText').textContent;
+  const status = document.getElementById('inviteStatus');
+  try {
+    await navigator.clipboard.writeText(text);
+    status.className = 'status success'; status.textContent = 'Скопировано.';
+  } catch (e) {
+    status.className = 'status error'; status.textContent = 'Не удалось скопировать.';
+  }
+}
+async function shareInvite() {
+  const text = document.getElementById('inviteText').textContent;
+  const status = document.getElementById('inviteStatus');
+  if (navigator.share) {
+    try { await navigator.share({ title: 'Голубь', text }); status.className='status success'; status.textContent='Отправлено.'; }
+    catch (e) { status.className='status error'; status.textContent='Отменено.'; }
+  } else {
+    status.className='status error'; status.textContent='Не поддерживается. Используйте «Скопировать».';
+  }
+}
+
+/* ============================================================
+   МОДАЛКА КЛЮЧА
+   ============================================================ */
+function openKeyModal() {
+  document.getElementById('keyModal').classList.add('show');
+  document.getElementById('keyInput').value = keyBase64 || '';
+  document.getElementById('keyStatus').textContent = '';
+}
+function closeKeyModal() { document.getElementById('keyModal').classList.remove('show'); }
+
+/* ============================================================
+   УТИЛИТЫ
+   ============================================================ */
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
+}
+
+/* ============================================================
+   СТАРТ
+   ============================================================ */
+(async function init() {
+  const savedKey = localStorage.getItem(LS_KEY);
+  if (savedKey) {
+    try { cryptoKey = await importKeyFromBase64(savedKey); keyBase64 = savedKey; }
+    catch (e) { localStorage.removeItem(LS_KEY); }
+  }
+  updateKeyPanel();
+
+  const savedUser = localStorage.getItem(LS_USER);
+  if (savedUser) {
+    try {
+      const u = JSON.parse(savedUser);
+      const res = await fetch(`${FIREBASE_URL}/users/${u.id}.json`);
+      const data = await res.json();
+      if (data) {
+        currentUser = u;
+        document.getElementById('authModal').classList.remove('show');
+        document.getElementById('userBar').style.display = 'flex';
+        document.getElementById('userAvatar').textContent = u.name[0].toUpperCase();
+        document.getElementById('userName').textContent = u.name;
+        document.getElementById('userIdLabel').textContent = '@' + u.id;
+
+        await ensureSavedChat();
+        startChatsListener();
+      } else {
+        localStorage.removeItem(LS_USER);
+      }
+    } catch (e) { localStorage.removeItem(LS_USER); }
+  }
+})();
+</script>
+</body>
+</html>
